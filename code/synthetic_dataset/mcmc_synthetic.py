@@ -276,19 +276,12 @@ def lnprob(pars, data, fbad):
                 else:
                     f.write("{:.8f},".format(pars[i]))
 
-        # # Make bad pars into a data frame
-        # df = pd.DataFrame({"B": pars[0], "P": pars[1], "MdiscI": pars[2],
-        #                    "RdiscI": pars[3], "epsilon": pars[4],
-        #                    "delta": pars[5]}, index=0)
-        # # Write bad pars data frame to CSV file
-        # with open(fbad, 'a') as f:
-        #     df.to_csv(f, header=f.tell() == 0, index=False)
-
         return -np.inf
 
     return ll + lp
 
 
+# If bad data file is empty, then remove it
 def clean_up(fbad):
     try:
         pd.read_csv(fbad)
@@ -297,7 +290,9 @@ def clean_up(fbad):
         print "File deleted: {}".format(fbad)
 
 
+# Make a trace plot
 def plot_trace(sampler, fplot, Npars, Nwalk, Nstep, Nburn):
+
     fig, axes = plt.subplots(Npars + 1, 1, sharex=True, figsize=(6, 8))
 
     for i in range(Nwalk):
@@ -323,6 +318,7 @@ def plot_trace(sampler, fplot, Npars, Nwalk, Nstep, Nburn):
     plt.clf()
 
 
+# Output the chains to various files
 def output_chain(sampler, fchain, Npars, Nwalk, Nstep):
     # Get flat flat chains and probabilities
     chain = sampler.flatchain
@@ -342,8 +338,10 @@ def output_chain(sampler, fchain, Npars, Nwalk, Nstep):
     # Write to CSV file
     df.to_csv(fchain, index=False)
 
+    # List of parameter names
     par_names = ["B", "P", "logMD", "logRD", "logeps", "logdelt"]
 
+    # Output each parameter chain to it's own file
     for k in range(Npars):
         fpar = "".join([fchain.strip(".csv"), "_{}.csv".format(par_names[k])])
         dict = {}
@@ -352,6 +350,7 @@ def output_chain(sampler, fchain, Npars, Nwalk, Nstep):
         df = pd.DataFrame(dict, index=range(Nstep))
         df.to_csv(fpar)
 
+    # Output the log-probability to it's own file
     dict = {}
     for i in range(Nwalk):
         dict[i] = sampler.lnprobability[i,:]
@@ -359,6 +358,7 @@ def output_chain(sampler, fchain, Npars, Nwalk, Nstep):
     df.to_csv("".join([fchain.strip(".csv"), "_lnprob.csv"]))
 
 
+# Create file names to save data to
 def create_filenames(name, data_path, plot_path):
     # Create CSV file paths
     fdata = os.path.join(data_path, "{}.csv".format(name))
@@ -375,6 +375,7 @@ def create_filenames(name, data_path, plot_path):
     return fdata, fchain, fbad, fplot
 
 
+# Make directories to save outputs to
 def make_directories(dirname):
     # Find data directory
     path = os.path.join("data", "synthetic_datasets")
