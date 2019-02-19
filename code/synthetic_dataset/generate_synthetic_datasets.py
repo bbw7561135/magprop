@@ -190,7 +190,7 @@ Function to calculate the model light curve for a given set of parameters.
 
 def make_directories(dirname):
 
-    basename = os.path.join("data", "synthetic_dataset")
+    basename = os.path.join("data", "synthetic_datasets")
     if not os.path.exists(basename):
         os.mkdir(basename)
 
