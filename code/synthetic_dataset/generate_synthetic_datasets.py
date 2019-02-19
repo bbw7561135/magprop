@@ -208,14 +208,24 @@ grbs = {"Humped": [1.0, 5.0, 1.e-3, 100.0, 0.1, 1.0],
 
 for grb in grb_names:
 
-    # Make a directory
+    # Make a sub-directory for each burst type
     make_directories(grb)
 
+    # Grab the GRB parameters and generate the model light curve
     pars = grbs[grb]
-    Ltot, Lprop, Ldip = model_lc(pars)
+    Ltot, _, _ = model_lc(pars)
 
-    plt.loglog(t, Ldip, ':k')
-    plt.loglog(t, Lprop, '--k')
-    plt.loglog(t, Ltot, '-k')
-    plt.xlim(1.0e0, 1.0e6)
-    plt.show()
+    # Generate random indices along the length of the data arrays
+    indx = np.sort(np.random.randint(0, len(t), size=100))
+    x = t[indx]
+    y = Ltot[indx]
+
+    # Generate some Gaussian noise in y
+    yerr = 0.25 * y
+    y += np.random.normal(0.0, scale=yerr, size=100)
+
+    plt.errorbar(x, y, yerr=yerr, fmt='.k', capsize=0.0)
+    plt.xscale("log")
+    plt.yscale("log")
+    plt.savefig("{}.png".format(grb))
+    plt.clf()
