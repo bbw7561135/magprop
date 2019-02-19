@@ -428,9 +428,9 @@ def main():
 
     # Initialise MCMC parameters
     Npars = 6     # Number of fitting parameters
-    Nwalk = 20  #24    # Number of affine invariant walkers
-    Nstep = 100  #2000  # Number of Monte Carlo steps to take
-    Nburn = 5  #00   # Number of burn-in steps
+    Nwalk = 24    # Number of affine invariant walkers
+    Nstep = 2000  # Number of Monte Carlo steps to take
+    Nburn = 500   # Number of burn-in steps
 
     # Calculate initial position
     p0 = truths[args.name]
