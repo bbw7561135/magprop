@@ -1,7 +1,6 @@
 import os
 import numpy as np
-# import pandas as pd
-import matplotlib.pyplot as plt
+import pandas as pd
 from scipy.integrate import odeint
 
 
@@ -198,6 +197,8 @@ def make_directories(dirname):
     if not os.path.exists(os.path.join(basename, dirname)):
         os.mkdir(os.path.join(basename, dirname))
 
+    return os.path.join(basename, dirname)
+
 
 # GRB types and parameters
 grb_names = ["Humped", "Classic", "Sloped", "Stuttering"]
@@ -209,7 +210,7 @@ grbs = {"Humped": [1.0, 5.0, 1.e-3, 100.0, 0.1, 1.0],
 for grb in grb_names:
 
     # Make a sub-directory for each burst type
-    make_directories(grb)
+    filepath = make_directories(grb)
 
     # Grab the GRB parameters and generate the model light curve
     pars = grbs[grb]
@@ -224,8 +225,8 @@ for grb in grb_names:
     yerr = 0.25 * y
     y += np.random.normal(0.0, scale=yerr, size=100)
 
-    plt.errorbar(x, y, yerr=yerr, fmt='.k', capsize=0.0)
-    plt.xscale("log")
-    plt.yscale("log")
-    plt.savefig("{}.png".format(grb))
-    plt.clf()
+    # Create a data frame of dataset
+    df = pd.DataFrame({"x": x, "y": y, "yerr": yerr})
+
+    # Write data frame to a CSV file
+    df.to_csv(os.path.join(filepath, "{}.csv".format(grb)), index=False)
