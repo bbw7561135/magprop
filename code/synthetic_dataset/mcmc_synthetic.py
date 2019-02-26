@@ -287,7 +287,7 @@ def clean_up(fbad):
         pd.read_csv(fbad)
     except pd.errors.EmptyDataError:
         os.remove(fbad)
-        print "File deleted: {}".format(fbad)
+        print "--- File deleted: {} ---".format(fbad)
 
 
 # Make a trace plot
@@ -319,24 +319,17 @@ def plot_trace(sampler, fplot, Npars, Nwalk, Nstep, Nburn):
 
 
 # Output the chains to various files
-def output_chain(sampler, fchain, Npars, Nwalk, Nstep):
-    # Get flat flat chains and probabilities
-    chain = sampler.flatchain
-    lnprobs = sampler.flatlnprobability
+def output_chain(sampler, fchain, Npars, Nwalk, Nstep, seed):
+    # Write the chain and lnprobability to the output file
+    with open(fchain, "w") as f:
+        f.write("{0},{1},{2},{3}\n".format(Npars, Nwalk, Nstep, seed))
 
-    # Create data frame
-    df = pd.DataFrame({
-        "B": chain[:, 0],
-        "P": chain[:, 1],
-        "log_MdiscI": chain[:, 2],
-        "log_RdiscI": chain[:, 3],
-        "log_epsilon": chain[:, 4],
-        "log_delta": chain[:, 5],
-        "log_prob": lnprobs
-    })
+        for j in range(Nstep):
+            for i in range(Nwalk):
+                for k in range(Npars):
+                    f.write("{:.4f},".format(sampler.chain[i, j, k]))
 
-    # Write to CSV file
-    df.to_csv(fchain, index=False)
+                f.write("{:.4f}\n".format(sampler.lnprobability[i, j]))
 
     # List of parameter names
     par_names = ["B", "P", "logMD", "logRD", "logeps", "logdelt"]
@@ -344,18 +337,25 @@ def output_chain(sampler, fchain, Npars, Nwalk, Nstep):
     # Output each parameter chain to it's own file
     for k in range(Npars):
         fpar = "".join([fchain.strip(".csv"), "_{}.csv".format(par_names[k])])
-        dict = {}
-        for i in range(Nwalk):
-            dict[i] = sampler.chain[i,:,k]
-        df = pd.DataFrame(dict, index=range(Nstep))
-        df.to_csv(fpar)
+
+        with open(fpar, "w") as f:
+            for j in range(Nstep):
+                for i in range(Nwalk):
+
+                    if i == (Nwalk - 1):
+                        f.write("{:.4f}\n".format(sampler.chain[i, j, k]))
+                    else:
+                        f.write("{:.4f},".format(sampler.chain[i, j, k]))
 
     # Output the log-probability to it's own file
-    dict = {}
-    for i in range(Nwalk):
-        dict[i] = sampler.lnprobability[i,:]
-    df = pd.DataFrame(dict, index=range(Nstep))
-    df.to_csv("".join([fchain.strip(".csv"), "_lnprob.csv"]))
+    with open("".join([fchain.strip(".csv"), "_lnprob.csv"]), "w") as f:
+        for j in range(Nstep):
+            for i in range(Nwalk):
+
+                if i == (Nwalk - 1):
+                    f.write("{:.4f}\n".format(sampler.lnprobability[i, j]))
+                else:
+                    f.write("{:.4f},".format(sampler.lnprobability[i, j]))
 
 
 # Create file names to save data to
@@ -412,6 +412,10 @@ def parse_args():
 
 
 def main():
+    # Set random seed
+    seed = 123
+    np.random.seed(seed)
+
     # Get command-line args
     args = parse_args()
 
@@ -442,11 +446,11 @@ def main():
 
     # Run the sampler
     sampler.run_mcmc(pos, Nstep)
-    print "Average acceptance fraction: {:.4f}".format(
+    print "--- Average acceptance fraction: {:.4f} ---".format(
         np.mean(sampler.acceptance_fraction))
 
     # Output the chain
-    output_chain(sampler, fchain, Npars, Nwalk, Nstep)
+    output_chain(sampler, fchain, Npars, Nwalk, Nstep, seed)
 
     # Plot the trace
     plot_trace(sampler, fplot, Npars, Nwalk, Nstep, Nburn)
@@ -456,4 +460,7 @@ def main():
 
 
 if __name__ == "__main__":
+    import time
+    start_time = time.time()
     main()
+    print "--- {:.2f} minutes ---".format((time.time() - start_time) / 60.0)
