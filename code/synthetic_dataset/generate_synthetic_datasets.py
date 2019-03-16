@@ -1,4 +1,5 @@
 import os
+import argparse
 import numpy as np
 import pandas as pd
 from scipy.integrate import odeint
@@ -200,6 +201,14 @@ def make_directories(dirname):
     return os.path.join(basename, dirname)
 
 
+# Command line arguments
+parser = argparse.ArgumentParser()
+parser.add_argument('--grb', required=True,
+                    help="GRB type to create dataset of")
+parser.add_argument('-o', '--output-file', required=True,
+                    help="Output file to save figure to")
+args = parser.parse_args()
+
 # GRB types and parameters
 grb_names = ["Humped", "Classic", "Sloped", "Stuttering"]
 grbs = {"Humped": [1.0, 5.0, 1.e-3, 100.0, 0.1, 1.0],
@@ -207,26 +216,21 @@ grbs = {"Humped": [1.0, 5.0, 1.e-3, 100.0, 0.1, 1.0],
         "Sloped": [1.0, 1.0, 1.e-3, 100.0, 10.0, 10.0],
         "Stuttering": [1.0, 5.0, 1.e-5, 100.0, 0.1, 100.0]}
 
-for grb in grb_names:
+# Grab the GRB parameters and generate the model light curve
+pars = grbs[args.grb]
+Ltot, _, _ = model_lc(pars)
 
-    # Make a sub-directory for each burst type
-    filepath = make_directories(grb)
+# Generate random indices along the length of the data arrays
+indx = np.sort(np.random.randint(0, len(t), size=100))
+x = t[indx]
+y = Ltot[indx]
 
-    # Grab the GRB parameters and generate the model light curve
-    pars = grbs[grb]
-    Ltot, _, _ = model_lc(pars)
+# Generate some Gaussian noise in y
+yerr = 0.25 * y
+y += np.random.normal(0.0, scale=yerr, size=100)
 
-    # Generate random indices along the length of the data arrays
-    indx = np.sort(np.random.randint(0, len(t), size=100))
-    x = t[indx]
-    y = Ltot[indx]
+# Create a data frame of dataset
+df = pd.DataFrame({"x": x, "y": y, "yerr": yerr})
 
-    # Generate some Gaussian noise in y
-    yerr = 0.25 * y
-    y += np.random.normal(0.0, scale=yerr, size=100)
-
-    # Create a data frame of dataset
-    df = pd.DataFrame({"x": x, "y": y, "yerr": yerr})
-
-    # Write data frame to a CSV file
-    df.to_csv(os.path.join(filepath, "{}.csv".format(grb)), index=False)
+# Write data frame to a CSV file
+df.to_csv(args.output_file, index=False)
